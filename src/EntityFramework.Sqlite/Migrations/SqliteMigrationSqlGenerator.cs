@@ -22,6 +22,18 @@ namespace Microsoft.Data.Entity.Sqlite.Migrations
             _sql = sqlGenerator;
         }
 
+        public override void Generate(AddColumnOperation operation, IModel model, SqlBatchBuilder builder)
+        {
+            Check.NotNull(operation, nameof(operation));
+
+            if (operation.DefaultExpression != null
+                && operation.DefaultExpression.Contains("CURRENT_"))
+            {
+                throw new NotSupportedException(Strings.AddColumnWithDefaultExprNotSupported(operation.Table, operation.DefaultExpression));
+            }
+            base.Generate(operation, model, builder);
+        }
+
         public override void Generate(DropIndexOperation operation, IModel model, SqlBatchBuilder builder)
         {
             Check.NotNull(operation, nameof(operation));
@@ -30,16 +42,6 @@ namespace Microsoft.Data.Entity.Sqlite.Migrations
             builder
                 .Append("DROP INDEX ")
                 .Append(_sql.DelimitIdentifier(operation.Name));
-        }
-
-        public override void Generate(RenameSequenceOperation operation, IModel model, SqlBatchBuilder builder)
-        {
-            throw new NotImplementedException();
-        }
-
-        public override void Generate(RenameColumnOperation operation, IModel model, SqlBatchBuilder builder)
-        {
-            throw new NotImplementedException();
         }
 
         public override void Generate(RenameTableOperation operation, IModel model, SqlBatchBuilder builder)
@@ -57,14 +59,104 @@ namespace Microsoft.Data.Entity.Sqlite.Migrations
             }
         }
 
+        #region Invalid migration operations
+
+        // These operations can be accomplished instead with a table-rebuild
+        public override void Generate(AddForeignKeyOperation operation, IModel model, SqlBatchBuilder builder)
+        {
+            throw new NotSupportedException(Strings.InvalidMigrationOperation);
+        }
+
+        public override void Generate(AddPrimaryKeyOperation operation, IModel model, SqlBatchBuilder builder)
+        {
+            throw new NotSupportedException(Strings.InvalidMigrationOperation);
+        }
+
+        public override void Generate(AddUniqueConstraintOperation operation, IModel model, SqlBatchBuilder builder)
+        {
+            throw new NotSupportedException(Strings.InvalidMigrationOperation);
+        }
+
+        public override void Generate(DropColumnOperation operation, IModel model, SqlBatchBuilder builder)
+        {
+            throw new NotSupportedException(Strings.InvalidMigrationOperation);
+        }
+
+        public override void Generate(DropForeignKeyOperation operation, IModel model, SqlBatchBuilder builder)
+        {
+            throw new NotSupportedException(Strings.InvalidMigrationOperation);
+        }
+
+        public override void Generate(DropPrimaryKeyOperation operation, IModel model, SqlBatchBuilder builder)
+        {
+            throw new NotSupportedException(Strings.InvalidMigrationOperation);
+        }
+
+        public override void Generate(DropUniqueConstraintOperation operation, IModel model, SqlBatchBuilder builder)
+        {
+            throw new NotSupportedException(Strings.InvalidMigrationOperation);
+        }
+
+        public override void Generate(RenameColumnOperation operation, IModel model, SqlBatchBuilder builder)
+        {
+            throw new NotSupportedException(Strings.InvalidMigrationOperation);
+        }
+
         public override void Generate(RenameIndexOperation operation, IModel model, SqlBatchBuilder builder)
         {
-            throw new NotImplementedException();
+            throw new NotSupportedException(Strings.InvalidMigrationOperation);
         }
 
         public override void Generate(AlterColumnOperation operation, IModel model, SqlBatchBuilder builder)
         {
-            throw new NotImplementedException();
+            throw new NotSupportedException(Strings.InvalidMigrationOperation);
         }
+
+        #endregion
+
+        #region Invalid schema operations
+
+        // EF.SQLite does not support ATTACH/DETACH DATABASE and therefore not support creating schema
+        public override void Generate(CreateSchemaOperation operation, IModel model, SqlBatchBuilder builder)
+        {
+            throw new NotSupportedException(Strings.MultipleDatabasesNotSupported);
+        }
+
+        public override void Generate(DropSchemaOperation operation, IModel model, SqlBatchBuilder builder)
+        {
+            throw new NotSupportedException(Strings.MultipleDatabasesNotSupported);
+        }
+
+        #endregion
+
+        #region Sequences not supported
+
+        // SQLite does not have sequences
+        public override void Generate(RestartSequenceOperation operation, IModel model, SqlBatchBuilder builder)
+        {
+            throw new NotSupportedException(Strings.SequencesNotSupported);
+        }
+
+        public override void Generate(CreateSequenceOperation operation, IModel model, SqlBatchBuilder builder)
+        {
+            throw new NotSupportedException(Strings.SequencesNotSupported);
+        }
+
+        public override void Generate(RenameSequenceOperation operation, IModel model, SqlBatchBuilder builder)
+        {
+            throw new NotSupportedException(Strings.SequencesNotSupported);
+        }
+
+        public override void Generate(AlterSequenceOperation operation, IModel model, SqlBatchBuilder builder)
+        {
+            throw new NotSupportedException(Strings.SequencesNotSupported);
+        }
+
+        public override void Generate(DropSequenceOperation operation, IModel model, SqlBatchBuilder builder)
+        {
+            throw new NotSupportedException(Strings.SequencesNotSupported);
+        }
+
+        #endregion
     }
 }
